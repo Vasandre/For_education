@@ -1,16 +1,18 @@
 # https://www.codewars.com/kata/54e6533c92449cc251001667/train/python
 
 def unique_in_order(sequence):
-
+    
     current = 0
+    previous = 0
     answer = []
 
-    while current < len(sequence):
+    while previous < len(sequence):
 
-        if not answer or sequence[current] != answer[-1]:
+        if not answer or sequence[current] != sequence[previous]:
 
-            answer.append(sequence[current])
+            answer.append(sequence[previous])
+            current = previous
 
-        current += 1
+        previous += 1
 
     return answer
