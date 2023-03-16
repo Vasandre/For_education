@@ -8,8 +8,6 @@ class Solution:
 
         while right < length:
 
-            print(left, right)
-
             while nums[left] != 0 and left < right:
                 left += 1
                 # right += 1
