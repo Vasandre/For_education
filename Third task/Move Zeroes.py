@@ -10,7 +10,6 @@ class Solution:
 
             while nums[left] != 0 and left < right:
                 left += 1
-                # right += 1
 
             if nums[right] != 0 and nums[left] == 0:
                 nums[left] = nums[right]
