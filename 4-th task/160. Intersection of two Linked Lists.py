@@ -4,6 +4,8 @@
 #         self.val = x
 #         self.next = None
 
+# https://leetcode.com/problems/intersection-of-two-linked-lists/
+
 class Solution:
     def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> Optional[ListNode]:
 
