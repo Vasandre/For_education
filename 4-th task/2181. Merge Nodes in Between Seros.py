@@ -3,6 +3,9 @@
 #     def __init__(self, val=0, next=None):
 #         self.val = val
 #         self.next = next
+
+# https://leetcode.com/problems/merge-nodes-in-between-zeros/
+
 class Solution:
     def mergeNodes(self, head: Optional[ListNode]) -> Optional[ListNode]:
 
