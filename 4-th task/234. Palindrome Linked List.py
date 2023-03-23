@@ -3,6 +3,9 @@
 #     def __init__(self, val=0, next=None):
 #         self.val = val
 #         self.next = next
+
+# https://leetcode.com/problems/palindrome-linked-list/
+
 class Solution:
     def isPalindrome(self, head: Optional[ListNode]) -> bool:
 
