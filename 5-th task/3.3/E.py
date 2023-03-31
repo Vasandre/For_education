@@ -1,0 +1,1 @@
+{digit for digit in numbers if int(digit ** 0.5) ** 2 == digit}

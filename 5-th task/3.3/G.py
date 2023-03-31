@@ -1,0 +1,1 @@
+{num: [count for count in range(1, num + 1) if num % count == 0] for num in numbers}

@@ -1,0 +1,1 @@
+"".join(letter[0].upper() for letter in string.split())

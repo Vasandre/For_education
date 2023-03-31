@@ -1,0 +1,1 @@
+"".join(expres[0] * expres[1] for expres in rle)
