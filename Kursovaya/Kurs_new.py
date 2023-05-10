@@ -2,9 +2,109 @@ import matplotlib.pyplot as plt  # для построения графиков
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # для построения плоскости по 4 точкам
 import math  # математические вычисления
 
+import noise
+import numpy as np
+
+
+# функция для создания поверхности
+def maps():
+    shape = (50, 50)  # размеры сетки
+    scale = 100.0  # масштаб
+    octaves = 6  # октавы
+    persistence = 0.5
+    lacunarity = 2.0
+
+    world = np.zeros(shape)  # создаём матрицу
+
+    # заполнение матрицы значениями высот
+    for i in range(shape[0]):
+        for j in range(shape[1]):
+            world[i][j] = noise.pnoise2(i / scale,
+                                        j / scale,
+                                        octaves=octaves,
+                                        persistence=persistence,
+                                        lacunarity=lacunarity,
+                                        repeatx=2048,
+                                        repeaty=2048,
+                                        base=42) * 100
+
+    return world
+
+
+# функция для расчёта коэффициентов уравнения плоскости
+def plane_coefficients(point_1: list, point_2: list, point_3: list):
+    A = (point_2[1] - point_1[1]) * (point_3[2] - point_1[2]) - (point_2[2] - point_1[2]) * (point_3[1] - point_1[1])
+    B = (point_2[2] - point_1[2]) * (point_3[0] - point_1[0]) - (point_2[0] - point_1[0]) * (point_3[2] - point_1[2])
+    C = (point_2[0] - point_1[0]) * (point_3[1] - point_1[1]) - (point_2[1] - point_1[1]) * (point_3[0] - point_1[0])
+    D = point_1[0] * (-A) + point_1[1] * (-B) + point_1[2] * (-C)
+
+    return [A, B, C, D]
+
+
+# фукция для нахождения наивысшей точки
+def highest(array: list):
+    max_point = -1000
+    num = 0
+
+    for el in range(len(array)):
+        if array[el][2] > max_point:
+            max_point = array[el][2]
+            num = array[el]
+
+    return num
+
+
+# функция сравнения координат точки пересечения с координатами точек плоскости
+def comparison(point_1, point_2, point_3, point_4):
+    for i in range(3):
+        # если координата точки не выходит за пределы
+        if min(point_2[i], point_3[i], point_4[i]) <= point_1[i] <= max(point_2[i], point_3[i], point_4[i]):
+            continue
+        else:
+            return False
+
+    return True
+
+
+# функция поиска точки пересечения
+def search(matrix, point: list, vector: list):
+    points = []  # вектор, содержащий точки пересечения с разными плоскостями
+    # идём по строкам
+    for line in range(1, len(matrix)):
+        # идём по столбцам
+        for column in range(1, len(matrix)):
+            # вычисление точек плоскости
+            component_1 = [line, column - 1, matrix[line][column - 1]]
+            component_2 = [line - 1, column, matrix[line - 1][column]]
+            component_3 = [line - 1, column - 1, matrix[line - 1][column - 1]]
+            component_4 = [line, column, matrix[line][column]]
+            # вычисление коэффицентов первой плоскости
+            plane_1 = plane_coefficients(component_3,
+                                         component_1,
+                                         component_4)
+            # вычисление коэффицентов первой плоскости
+            plane_2 = plane_coefficients(component_3,
+                                         component_2,
+                                         component_4)
+            # если есть персечение
+            if answer := intersection(plane_1, point, vector):
+                # если точка между точками
+                if comparison(answer, component_3, component_1, component_4):
+                    answer.append(angle(plane_1, vector))
+                    answer.append(distance_between(plane_1, point))
+                    points.append(answer)
+
+            if answer := intersection(plane_2, point, vector):
+                if comparison(answer, component_3, component_2, component_4):
+                    answer.append(angle(plane_2, vector))
+                    answer.append(distance_between(plane_2, point))
+                    points.append(answer)
+
+    return points
+
 
 # функция нахождения точки пересечения прямой и плоскости
-def intersection(surface: list, point: list, vector: list) -> list:
+def intersection(surface: list, point: list, vector: list):
     # вычисление произведения вручную
     scalar_vector = 0  # скалярное произведение векторов
     on_surface = 0  # подставление координат точки в уравнение окружности
@@ -14,6 +114,9 @@ def intersection(surface: list, point: list, vector: list) -> list:
         on_surface += surface[el] * point[el]
 
     on_surface += surface[3]
+
+    if scalar_vector == 0:
+        return False
 
     # вычисление координат точки пересечения
     t = - on_surface / scalar_vector
@@ -91,7 +194,7 @@ def graphics(surface: list, point: list, point_inter: list) -> None:
     axes.set_ylabel('Ось Y')
     axes.set_zlabel('Ось Z')
 
-    # координаты "хвоста" вектора
+    # координаты "хвоста"(начала) вектора
     x_p = point[0]
     y_p = point[1]
     z_p = point[2]
@@ -145,17 +248,61 @@ def graphics(surface: list, point: list, point_inter: list) -> None:
     plt.show()
 
 
-def main():
-    # задание коэффициентов для уравнения плоскости
-    A, B, C, D = 20, 4, 9, 0
-    surf = [A, B, C, D]
-    p = [20, 1, 20]  # направляющий вектор
-    M_1 = [50, 20, 10]  # заданная точка
+# функция для построения поверхности и точек с вектором
+def construction(matrix, points, point):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d", computed_zorder=False)
 
-    point_intersection = intersection(surf, M_1, p)
-    print_angle = angle(surf, p)
-    distance_answer = distance_between(surf, M_1)
-    graphics(surf, M_1, point_intersection)
+    ax.set_title('График 3D', fontsize=14, fontweight='bold')  # заголовок в полотне
+
+    # подписываем оси
+    ax.set_xlabel('Ось X')
+    ax.set_ylabel('Ось Y')
+    ax.set_zlabel('Ось Z')
+
+    lin_x = np.linspace(0, len(matrix), len(matrix), endpoint=False)
+    lin_y = np.linspace(0, len(matrix), len(matrix), endpoint=False)
+    x, y = np.meshgrid(lin_x, lin_y)
+
+    # построение поверхности
+    ax.plot_surface(x, y, matrix.transpose(), cmap='terrain', zorder=1)
+
+    # нахождение наивысшей точки
+    inter = highest(points)
+
+    # отрисовка точки пересечения
+    ax.scatter3D(inter[0], inter[1], inter[2], color="red", linewidth=1, zorder=2)
+    ax.text(inter[0], inter[1], inter[2], 'M({}, {}, {})'.format(round(inter[0], 2),
+                                                                 round(inter[1], 2),
+                                                                 round(inter[2], 2), ))
+    # отрисовка заданной точки
+    ax.scatter3D(point[0], point[1], point[2], color="orange", linewidth=1, zorder=2)
+    ax.text(point[0], point[1], point[2], 'M1({}, {}, {})'.format(round(point[0], 2),
+                                                                  round(point[1], 2),
+                                                                  round(point[2], 2)))
+
+    # координаты начала вектора
+    x_p = point[0]
+    y_p = point[1]
+    z_p = point[2]
+
+    # кооридинаты вектора
+    u_x = inter[0] - point[0]
+    u_y = inter[1] - point[1]
+    u_z = inter[2] - point[2]
+
+    # построение вектора
+    ax.quiver(x_p, y_p, z_p, u_x, u_y, u_z, color='green', linewidth=1, zorder=2)
+
+    plt.show()
+
+
+def main():
+    p = [-10, 5, 10]  # направляющий вектор
+    M_1 = [0, 20, 18]  # заданная точка
+
+    data = search(maps(), M_1, p)
+    construction(maps(), data, M_1)
 
 
 if __name__ == "__main__":
