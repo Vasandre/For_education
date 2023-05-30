@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt  # для построения графиков
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # для построения плоскости по 4 точкам
 import math  # математические вычисления
 
-import noise
+import noise  # для генерации шума Перлина
 import numpy as np
 
 
@@ -41,29 +41,51 @@ def plane_coefficients(point_1: list, point_2: list, point_3: list):
     return [A, B, C, D]
 
 
-# фукция для нахождения наивысшей точки
-def highest(array: list):
-    max_point = -1000
-    num = 0
+# фукция для нахождения наиближайшей точки
+def highest(coord_points: list, point: list):
+    lengths = []  # список длин векторов
 
-    for el in range(len(array)):
-        if array[el][2] > max_point:
-            max_point = array[el][2]
-            num = array[el]
+    for i in range(len(coord_points)):
+        # расчёт компонентов векторов
+        difference = [coord_points[i][x] - point[x] for x in range(3)]
+        # расчёт длин векторов
+        length = math.sqrt(sum([el ** 2 for el in difference]))
+        lengths.append(length)
 
-    return num
+    index = lengths.index(min(lengths))  # индекс координат точки, которая ближе всех к заданной
+
+    return coord_points[index]
 
 
 # функция сравнения координат точки пересечения с координатами точек плоскости
-def comparison(point_1, point_2, point_3, point_4):
-    for i in range(3):
-        # если координата точки не выходит за пределы
-        if min(point_2[i], point_3[i], point_4[i]) <= point_1[i] <= max(point_2[i], point_3[i], point_4[i]):
-            continue
-        else:
-            return False
+def comparison(tri_a, tri_b, tri_c, m, normal):
+    # расчёт компонент векторов, соединяющих найденную точку пересечения
+    # с точками треугольника
+    ma = [m[i] - tri_a[i] for i in range(3)]
+    mb = [m[i] - tri_b[i] for i in range(3)]
+    mc = [m[i] - tri_c[i] for i in range(3)]
 
-    return True
+    # вычисление векторного произведения между найденными векторами
+    ma_mb = [ma[1] * mb[2] - ma[2] * mb[1], -(ma[0] * mb[2] - ma[2] * mb[0]), ma[0] * mb[1] - ma[1] * mb[0]]
+    mb_mc = [mb[1] * mc[2] - mb[2] * mc[1], -(mb[0] * mc[2] - mb[2] * mc[0]), mb[0] * mc[1] - mb[1] * mc[0]]
+    mc_ma = [mc[1] * ma[2] - mc[2] * ma[1], -(mc[0] * ma[2] - mc[2] * ma[0]), mc[0] * ma[1] - mc[1] * ma[0]]
+
+    # вычисление скалярного произведения
+    scalar_1 = sum([normal[i] * ma_mb[i] for i in range(3)])
+    scalar_2 = sum([normal[i] * mb_mc[i] for i in range(3)])
+    scalar_3 = sum([normal[i] * mc_ma[i] for i in range(3)])
+
+    # если все скалярные произведения не отрицательные
+    if (scalar_1 >= 0) and (scalar_2 >= 0) and (scalar_3 >= 0):
+        return True
+
+    # если все скалярные произведения отрицательные
+    elif (scalar_1 < 0) and (scalar_2 < 0) and (scalar_3 < 0):
+        return True
+
+    # иначе все произведения разных знаков
+    else:
+        return False
 
 
 # функция поиска точки пересечения
@@ -78,6 +100,7 @@ def search(matrix, point: list, vector: list):
             component_2 = [line - 1, column, matrix[line - 1][column]]
             component_3 = [line - 1, column - 1, matrix[line - 1][column - 1]]
             component_4 = [line, column, matrix[line][column]]
+
             # вычисление коэффицентов первой плоскости
             plane_1 = plane_coefficients(component_3,
                                          component_1,
@@ -89,15 +112,11 @@ def search(matrix, point: list, vector: list):
             # если есть персечение
             if answer := intersection(plane_1, point, vector):
                 # если точка между точками
-                if comparison(answer, component_3, component_1, component_4):
-                    answer.append(angle(plane_1, vector))
-                    answer.append(distance_between(plane_1, point))
+                if comparison(component_3, component_1, component_4, answer, plane_1):
                     points.append(answer)
 
             if answer := intersection(plane_2, point, vector):
-                if comparison(answer, component_3, component_2, component_4):
-                    answer.append(angle(plane_2, vector))
-                    answer.append(distance_between(plane_2, point))
+                if comparison(component_3, component_2, component_4, answer, plane_2):
                     points.append(answer)
 
     return points
@@ -143,7 +162,7 @@ def angle(surface_eq: list, guide_vector: list) -> float:
     for el in range(3):
         mult_vectors += surface_eq[el] * guide_vector[el]
 
-    sin_angle = math.sin(mult_vectors / (len_vector * len_normal))
+    sin_angle = math.fabs(math.asin(mult_vectors / (len_vector * len_normal)))
     angle_between = math.degrees(sin_angle)  # угол между прямой и плоскостью
 
     return angle_between
@@ -158,7 +177,7 @@ def distance_between(surface: list, point: list):
         multiplication += surface[i] * point[i]
     multiplication += surface[3]
 
-    normal_sqr = [x ** 2 for x in surface]
+    normal_sqr = [x ** 2 for x in surface[:3]]
     len_normal = math.sqrt(sum(normal_sqr))
 
     # расстояние между точкой и плоскостью
@@ -268,7 +287,7 @@ def construction(matrix, points, point):
     ax.plot_surface(x, y, matrix.transpose(), cmap='terrain', zorder=1)
 
     # нахождение наивысшей точки
-    inter = highest(points)
+    inter = highest(points, point)
 
     # отрисовка точки пересечения
     ax.scatter3D(inter[0], inter[1], inter[2], color="red", linewidth=1, zorder=2)
@@ -298,11 +317,18 @@ def construction(matrix, points, point):
 
 
 def main():
-    p = [-10, 5, 10]  # направляющий вектор
-    M_1 = [0, 20, 18]  # заданная точка
+    p = [5, 7, -20]  # направляющий вектор
+    M_1 = [15, 30, 18]  # заданная точка
+    # surf = [-2, 12, -41, 2]
+    # inter = intersection(surf, M_1, p)
+    # angle_between = angle(surf[:3], p)
+    # dist = distance_between(surf, M_1)
+    # graphics(surf, M_1, inter)
 
-    data = search(maps(), M_1, p)
-    construction(maps(), data, M_1)
+    world = maps()
+
+    data = search(world, M_1, p)
+    construction(world, data, M_1)
 
 
 if __name__ == "__main__":
