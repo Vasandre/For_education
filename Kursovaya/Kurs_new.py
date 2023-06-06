@@ -7,10 +7,11 @@ import numpy as np
 
 import time
 
+
 # функция для создания поверхности
 def maps():
-    shape = (200, 200)  # размеры сетки
-    scale = 200.0  # масштаб
+    shape = (100, 100)  # размеры сетки
+    scale = 150.0  # масштаб
     octaves = 5  # октавы
     persistence = 0.5
     lacunarity = 2.0
@@ -27,7 +28,7 @@ def maps():
                                         lacunarity=lacunarity,
                                         repeatx=2048,
                                         repeaty=2048,
-                                        base=31) * 100
+                                        base=42) * 100
 
     return world
 
@@ -42,7 +43,7 @@ def plane_coefficients(dot_1: list, dot_2: list, dot_3: list):
     return [A, B, C, D]
 
 
-# фукция для нахождения наиближайшей точки
+# функция для нахождения наиближайшей точки
 def highest(coord_points: list, set_point: list):
     lengths = []  # список длин векторов
 
@@ -127,21 +128,19 @@ def search(matrix, point: list, vector: list):
             component_3 = [line - 1, column - 1, matrix[line - 1][column - 1]]
             component_4 = [line, column, matrix[line][column]]
 
-            # вычисление коэффицентов первой плоскости
+            # вычисление коэффициентов первой плоскости
             plane_1 = plane_coefficients(component_3, component_1, component_4)
-            # вычисление коэффицентов первой плоскости
+            # вычисление коэффициентов первой плоскости
             plane_2 = plane_coefficients(component_3, component_2, component_4)
 
-            # если есть персечение
+            # если есть пересечение
             if answer := intersection(plane_1, point, vector):
                 # если точка между точками
                 if comparison(component_3, component_1, component_4, answer, plane_1):
-                    print(component_3, component_1, component_4)
                     points.append(answer)
 
             if answer := intersection(plane_2, point, vector):
                 if comparison(component_3, component_2, component_4, answer, plane_2):
-                    print(component_3, component_2, component_4)
                     points.append(answer)
 
     return points
@@ -216,65 +215,91 @@ def search_optimum(card, point_coord: list, direction: list):
         if x_m < 0:
             return []
 
-        for y in range(1, size_y):
+        for y in range(0, size_y - 1):
 
             object_1 = [x_m, y, card[x_m][y]]
-            object_2 = [x_m, y - 1, card[x_m][y - 1]]
+            object_2 = [x_m, y + 1, card[x_m][y + 1]]
 
             if x_m < size_x - 1:
 
-                object_3 = [x_m + 1, y - 1, card[x_m + 1][y - 1]]
+                object_3 = [x_m + 1, y + 1, card[x_m + 1][y + 1]]
                 object_4 = [x_m + 1, y, card[x_m + 1][y]]
 
                 # если найдена точка пересечения внутри первого треугольника
-                if dot := is_point(object_2, object_1, object_4, point_coord, direction):
+                if dot := is_point(object_1, object_4, object_3, point_coord, direction):
                     list_places.append(dot)
 
                 # если найдена точка пересечения внутри второго треугольника
-                if dot := is_point(object_2, object_3, object_4, point_coord, direction):
+                if dot := is_point(object_1, object_2, object_3, point_coord, direction):
                     list_places.append(dot)
 
+                if (x_m > 0) and (point_coord[0] % 2 == 0):
+
+                    object_7 = [x_m - 1, y + 1, card[x_m - 1][y + 1]]
+                    object_8 = [x_m - 1, y, card[x_m - 1][y]]
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(object_8, object_1, object_2, point_coord, direction):
+                        list_places.append(dot)
+
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(object_8, object_7, object_2, point_coord, direction):
+                        list_places.append(dot)
+
             else:
-                object_5 = [x_m - 1, y - 1, card[x_m - 1][y - 1]]
+                object_5 = [x_m - 1, y + 1, card[x_m - 1][y + 1]]
                 object_6 = [x_m - 1, y, card[x_m - 1][y]]
 
                 # если найдена точка пересечения внутри первого треугольника
-                if dot := is_point(object_5, object_6, object_1, point_coord, direction):
+                if dot := is_point(object_6, object_1, object_2, point_coord, direction):
                     list_places.append(dot)
 
                 # если найдена точка пересечения внутри второго треугольника
-                if dot := is_point(object_5, object_2, object_1, point_coord, direction):
+                if dot := is_point(object_6, object_5, object_2, point_coord, direction):
                     list_places.append(dot)
 
     # если проекция прямой перпендикулярна OY
-    elif (direction[1] == 0) and (direction[0] != 0):
+    elif (direction[0] != 0) and (direction[1] == 0):
 
         y_m = math.floor(point_coord[1])
 
         if y_m < 0:
             return []
 
-        for x in range(1, size_x):
+        for x in range(0, size_x - 1):
 
             item_1 = [x, y_m, card[x][y_m]]
-            item_4 = [x - 1, y_m, card[x - 1][y_m]]
+            item_4 = [x + 1, y_m, card[x + 1][y_m]]
 
             if y_m < size_y - 1:
                 item_2 = [x, y_m + 1, card[x][y_m + 1]]
-                item_3 = [x - 1, y_m + 1, card[x - 1][y_m + 1]]
+                item_3 = [x + 1, y_m + 1, card[x + 1][y_m + 1]]
 
                 # если найдена точка пересечения внутри первого треугольника
-                if dot := is_point(item_2, item_3, item_4, point_coord, direction):
+                if dot := is_point(item_1, item_4, item_3, point_coord, direction):
                     list_places.append(dot)
 
                 # если найдена точка пересечения внутри второго треугольника
-                if dot := is_point(item_2, item_1, item_4, point_coord, direction):
+                if dot := is_point(item_1, item_2, item_3, point_coord, direction):
                     list_places.append(dot)
+
+                if (y_m > 0) and (point_coord[1] % 2 == 0):
+
+                    item_7 = [x, y_m - 1, card[x][y_m - 1]]
+                    item_8 = [x + 1, y_m - 1, card[x + 1][y_m - 1]]
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(item_7, item_8, item_3, point_coord, direction):
+                        list_places.append(dot)
+
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(item_7, item_1, item_3, point_coord, direction):
+                        list_places.append(dot)
 
             else:
 
                 item_5 = [x, y_m - 1, card[x][y_m - 1]]
-                item_6 = [x - 1, y_m - 1, card[x - 1][y_m - 1]]
+                item_6 = [x + 1, y_m - 1, card[x + 1][y_m - 1]]
 
                 # если найдена точка пересечения внутри первого треугольника
                 if dot := is_point(item_6, item_4, item_1, point_coord, direction):
@@ -284,7 +309,7 @@ def search_optimum(card, point_coord: list, direction: list):
                 if dot := is_point(item_6, item_5, item_1, point_coord, direction):
                     list_places.append(dot)
 
-    # если проекция прямой выраждается в точку
+    # если проекция прямой вырождается в точку
     elif (direction[0] == 0) and (direction[1] == 0):
 
         x = math.floor(point_coord[0])
@@ -296,130 +321,176 @@ def search_optimum(card, point_coord: list, direction: list):
         if (y < 0) or (y >= size_y):
             return []
 
-        height_1 = [x, y, card[x][y]]
-        height_2 = [x + 1, y, card[x + 1][y]]
-        height_3 = [x + 1, y - 1, card[x + 1][y - 1]]
-        height_4 = [x, y - 1, card[x][y - 1]]
+        # если точка находится внутри матрицы
+        if (x < size_x - 1) and (y < size_y - 1):
+            height_1 = [x, y, card[x][y]]
+            height_2 = [x + 1, y, card[x + 1][y]]
+            height_3 = [x + 1, y + 1, card[x + 1][y + 1]]
+            height_4 = [x, y + 1, card[x][y + 1]]
 
-        # если найдена точка пересечения внутри первого треугольника
-        if dot := is_point(height_4, height_1, height_2, point_coord, direction):
-            list_places.append(dot)
+            # если найдена точка пересечения внутри первого треугольника
+            if dot := is_point(height_4, height_1, height_2, point_coord, direction):
+                list_places.append(dot)
 
-        # если найдена точка пересечения внутри второго треугольника
-        if dot := is_point(height_4, height_3, height_2, point_coord, direction):
-            list_places.append(dot)
+            # если найдена точка пересечения внутри второго треугольника
+            if dot := is_point(height_4, height_3, height_2, point_coord, direction):
+                list_places.append(dot)
+
+        # если точка находится на нижней границе:
+        elif (x == size_x - 1) and (y < size_y - 1):
+            height_1 = [x, y, card[x][y]]
+            height_2 = [x + 1, y, card[x + 1][y]]
+            height_3 = [x + 1, y - 1, card[x + 1][y - 1]]
+            height_4 = [x, y - 1, card[x][y - 1]]
+
+            # если найдена точка пересечения внутри первого треугольника
+            if dot := is_point(height_4, height_1, height_2, point_coord, direction):
+                list_places.append(dot)
+
+            # если найдена точка пересечения внутри второго треугольника
+            if dot := is_point(height_4, height_3, height_2, point_coord, direction):
+                list_places.append(dot)
+
+        # точка находится на правой границе
+        elif (x != size_x - 1) and (y == size_y - 1):
+            height_1 = [x, y, card[x][y]]
+            height_2 = [x, y - 1, card[x][y - 1]]
+            height_3 = [x + 1, y - 1, card[x + 1][y - 1]]
+            height_4 = [x + 1, y, card[x + 1][y]]
+
+            # если найдена точка пересечения внутри первого треугольника
+            if dot := is_point(height_2, height_3, height_4, point_coord, direction):
+                list_places.append(dot)
+
+            # если найдена точка пересечения внутри второго треугольника
+            if dot := is_point(height_2, height_1, height_4, point_coord, direction):
+                list_places.append(dot)
+
+        # точка находится в правом нижнем углу
+        elif (x == size_x - 1) and (y == size_y - 1):
+            height_1 = [x, y, card[x][y]]
+            height_2 = [x - 1, y, card[x - 1][y]]
+            height_3 = [x - 1, y - 1, card[x - 1][y - 1]]
+            height_4 = [x, y - 1, card[x][y - 1]]
+
+            # если найдена точка пересечения внутри первого треугольника
+            if dot := is_point(height_3, height_4, height_1, point_coord, direction):
+                list_places.append(dot)
+
+            # если найдена точка пересечения внутри второго треугольника
+            if dot := is_point(height_3, height_2, height_1, point_coord, direction):
+                list_places.append(dot)
 
     # сравниваем значения компонент по модулю направляющего вектора
-    elif math.fabs(direction[0]) >= math.fabs(direction[1]):
+    elif math.fabs(direction[0]) > math.fabs(direction[1]):
 
-        for x in range(1, size_x):
+        for x in range(0, size_x - 1):
 
             # вычисляем предыдущую координату по y
-            y_last = ((x - 1) - point_coord[0]) * (direction[1] / direction[0]) + point_coord[1]
+            y_future = ((x + 1) - point_coord[0]) * (direction[1] / direction[0]) + point_coord[1]
             # вычисляем текущую координату по y
             y_current = (x - point_coord[0]) * (direction[1] / direction[0]) + point_coord[1]
 
-            # если текущая координата отрцательная, то переходим к следующему шагу
-            if (y_current < 0) or (y_current >= size_y):
+            # если текущая координата отрицательная, то переходим к следующему шагу
+            if (y_future < 0) or (y_future >= size_y):
                 continue
 
             # округляем значения
-            y_0 = math.floor(y_last)
+            y_2 = math.floor(y_future)
             y_1 = math.floor(y_current)
 
             # вычислим координаты квадратов
             peak_1 = [x, y_1, card[x][y_1]]
-            peak_3 = [x - 1, y_1, card[x - 1][y_1]]
+            peak_2 = [x + 1, y_1, card[x + 1][y_1]]
 
-            if y_1 + 1 != size_y:
+            # if y_1 + 1 != size_y:
 
-                peak_2 = [x, y_1 + 1, card[x][y_1 + 1]]
-                peak_4 = [x - 1, y_1 + 1, card[x - 1][y_1 + 1]]
+            peak_3 = [x + 1, y_1 + 1, card[x + 1][y_1 + 1]]
+            peak_4 = [x + 1, y_1, card[x + 1][y_1]]
 
-                # если найдена точка пересечения внутри первого треугольника
-                if dot := is_point(peak_3, peak_1, peak_2, point_coord, direction):
-                    list_places.append(dot)
-                # если найдена точка пересечения внутри второго треугольника
-                if dot := is_point(peak_3, peak_4, peak_2, point_coord, direction):
-                    list_places.append(dot)
+            # если найдена точка пересечения внутри первого треугольника
+            if dot := is_point(peak_1, peak_4, peak_3, point_coord, direction):
+                list_places.append(dot)
+            # если найдена точка пересечения внутри второго треугольника
+            if dot := is_point(peak_1, peak_2, peak_3, point_coord, direction):
+                list_places.append(dot)
 
             # если прямая пересекает более 1 квадрата
-            if y_1 - y_0 == 1:
+            if (y_2 - y_1 == 1) and (y_2 < size_y - 1):
 
-                peak_5 = [x, y_1 - 2, card[x][y_1 - 2]]
-                peak_6 = [x - 1, y_1 - 2, card[x - 1][y_1 - 2]]
-
-                # если найдена точка пересечения внутри первого треугольника
-                if dot := is_point(peak_6, peak_3, peak_1, point_coord, direction):
-                    list_places.append(dot)
-                # если найдена точка пересечения внутри второго треугольника
-                if dot := is_point(peak_6, peak_5, peak_1, point_coord, direction):
-                    list_places.append(dot)
-
-            elif (y_1 - y_0 == -1) and (y_1 + 2 < size_y):
-
-                peak_7 = [x, y_1 + 1, card[x][y_1 + 1]]
-                peak_8 = [x - 1, y_1 + 1, card[x - 1][y_1 + 1]]
-                peak_9 = [x, y_1 + 2, card[x][y_1 + 2]]
-                peak_10 = [x - 1, y_1 + 2, card[x - 1][y_1 + 2]]
+                peak_5 = [x, y_1 + 2, card[x][y_1 + 2]]
+                peak_6 = [x + 1, y_1 + 2, card[x + 1][y_1 + 2]]
 
                 # если найдена точка пересечения внутри первого треугольника
-                if dot := is_point(peak_8, peak_10, peak_9, point_coord, direction):
+                if dot := is_point(peak_2, peak_3, peak_6, point_coord, direction):
                     list_places.append(dot)
                 # если найдена точка пересечения внутри второго треугольника
-                if dot := is_point(peak_8, peak_7, peak_9, point_coord, direction):
+                if dot := is_point(peak_2, peak_5, peak_6, point_coord, direction):
                     list_places.append(dot)
 
-    elif math.fabs(direction[0]) < math.fabs(direction[1]):
+            elif (y_2 - y_1 == -1) and (y_2 < size_y - 1):
 
-        for y in range(1, size_y):
+                peak_7 = [x + 1, y_1 - 1, card[x + 1][y_1 - 1]]
+                peak_8 = [x, y_1 - 1, card[x][y_1 - 1]]
+
+                # если найдена точка пересечения внутри первого треугольника
+                if dot := is_point(peak_8, peak_7, peak_4, point_coord, direction):
+                    list_places.append(dot)
+                # если найдена точка пересечения внутри второго треугольника
+                if dot := is_point(peak_8, peak_1, peak_4, point_coord, direction):
+                    list_places.append(dot)
+
+    elif math.fabs(direction[0]) <= math.fabs(direction[1]):
+
+        for y in range(0, size_y - 1):
 
             # вычисляем предыдущую координату по x
-            x_last = ((y - 1) - point_coord[1]) * (direction[0] / direction[1]) + point_coord[0]
+            x_future = ((y + 1) - point_coord[1]) * (direction[0] / direction[1]) + point_coord[0]
             # вычисляем текущую координату по x
             x_current = (y - point_coord[1]) * (direction[0] / direction[1]) + point_coord[0]
 
-            # если текущая координата отрцательная, то переходим к следующему шагу
-            if x_current < 0:
+            # если текущая координата отрицательная, то переходим к следующему шагу
+            if (x_future < 0) or (x_future >= size_x - 1):
                 continue
 
             # округляем значения
-            x_0 = math.floor(x_last)
+            x_2 = math.floor(x_future)
             x_1 = math.floor(x_current)
 
-            # print(x_1)
             # вычисляем координаты точек
             place_1 = [x_1, y, card[x_1][y]]
-            place_2 = [x_1 + 1, y, card[x_1 + 1][y]]
-            place_3 = [x_1, y - 1, card[x_1][y - 1]]
-            place_4 = [x_1 + 1, y - 1, card[x_1 + 1][y - 1]]
-
-            # print(place_1, place_2, place_3, place_4)
+            place_2 = [x_1, y + 1, card[x_1][y + 1]]
+            place_3 = [x_1 + 1, y + 1, card[x_1 + 1][y + 1]]
+            place_4 = [x_1 + 1, y, card[x_1 + 1][y]]
 
             # если найдена точка пересечения внутри первого треугольника
-            if dot := is_point(place_3, place_1, place_2, point_coord, direction):
+            if dot := is_point(place_1, place_4, place_3, point_coord, direction):
+                # print(place_3, place_1, place_2)
                 list_places.append(dot)
             # если найдена точка пересечения внутри второго треугольника
-            if dot := is_point(place_3, place_4, place_2, point_coord, direction):
+            if dot := is_point(place_1, place_2, place_3, point_coord, direction):
+                # print(place_3, place_4, place_2)
                 list_places.append(dot)
 
-            if (x_1 - x_0 == 1) and (x_1 + 2 != size_x):
+            if (x_2 - x_1 == 1) and (x_2 < size_x - 1):
 
                 place_5 = [x_1 + 2, y, card[x_1 + 2][y]]
-                place_6 = [x_1 + 2, y - 1, card[x_1 + 2][y - 1]]
+                place_6 = [x_1 + 2, y + 1, card[x_1 + 2][y + 1]]
 
                 # если найдена точка пересечения внутри первого треугольника
-                if dot := is_point(place_4, place_6, place_5, point_coord, direction):
+                if dot := is_point(place_4, place_5, place_6, point_coord, direction):
+                    # print(place_4, place_6, place_5)
                     list_places.append(dot)
 
                 # если найдена точка пересечения внутри второго треугольника
-                if dot := is_point(place_4, place_2, place_5, point_coord, direction):
+                if dot := is_point(place_4, place_3, place_6, point_coord, direction):
+                    # print(place_4, place_2, place_5)
                     list_places.append(dot)
 
-            elif x_1 - x_0 == -1:
+            elif x_2 - x_1 == -1:
 
-                place_7 = [x_1 - 1, y, card[x_1 - 1][y]]
-                place_8 = [x_1 - 1, y - 1, card[x_1 - 1][y - 1]]
+                place_7 = [x_1 - 1, y + 1, card[x_1 - 1][y + 1]]
+                place_8 = [x_1 - 1, y, card[x_1 - 1][y]]
 
                 # если найдена точка пересечения внутри первого треугольника
                 if dot := is_point(place_8, place_3, place_1, point_coord, direction):
@@ -428,6 +499,385 @@ def search_optimum(card, point_coord: list, direction: list):
                 # если найдена точка пересечения внутри второго треугольника
                 if dot := is_point(place_8, place_7, place_1, point_coord, direction):
                     list_places.append(dot)
+
+    return list_places
+
+
+def take_third(elem):
+    return elem[2]
+
+
+# функция для нахождения углов между векторами и горизонтальной плоскостью
+def min_max_angle(heights_points: list, start: list, init_angle):
+    # z_coord = [heights_points[coord][2] for coord in range(4)]
+
+    heights_points.sort(key=take_third, reverse=True)
+
+    for high in heights_points:
+        # вектор до высокой точки
+        max_vector = [high[i] - start[i] for i in range(3)]
+        max_angle = angle([0, 0, 1], max_vector)
+
+        # если угол меньше
+        if (max_angle >= init_angle) and (max_angle - init_angle <= 10):
+            return True
+
+    return False
+
+
+# функция оптимального поиска точки пересечения
+def search_optimum_with_angle(card, point_coord: list, direction: list):
+    list_places = []  # список найденных точек пересечения
+
+    # длины по координате x и y
+    size_x = len(card[0])
+    size_y = len(card)
+
+    angle_line = angle([0, 0, 1], direction)
+
+    # если проекция прямой перпендикулярна OX
+    if (direction[0] == 0) and (direction[1] != 0):
+
+        x_m = math.floor(point_coord[0])
+
+        if x_m < 0:
+            return []
+
+        for y in range(0, size_y - 1):
+
+            object_1 = [x_m, y, card[x_m][y]]
+            object_2 = [x_m, y + 1, card[x_m][y + 1]]
+
+            if x_m < size_x - 1:
+
+                object_3 = [x_m + 1, y + 1, card[x_m + 1][y + 1]]
+                object_4 = [x_m + 1, y, card[x_m + 1][y]]
+
+                if min_max_angle([object_1, object_2, object_3, object_4],
+                                 point_coord,
+                                 angle_line):
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(object_1, object_4, object_3, point_coord, direction):
+                        list_places.append(dot)
+
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(object_1, object_2, object_3, point_coord, direction):
+                        list_places.append(dot)
+
+                    if (x_m > 0) and (point_coord[0] % 2 == 0):
+
+                        object_7 = [x_m - 1, y + 1, card[x_m - 1][y + 1]]
+                        object_8 = [x_m - 1, y, card[x_m - 1][y]]
+
+                        if min_max_angle([object_1, object_2, object_7, object_8],
+                                         point_coord,
+                                         angle_line):
+
+                            # если найдена точка пересечения внутри первого треугольника
+                            if dot := is_point(object_8, object_1, object_2, point_coord, direction):
+                                list_places.append(dot)
+
+                            # если найдена точка пересечения внутри второго треугольника
+                            if dot := is_point(object_8, object_7, object_2, point_coord, direction):
+                                list_places.append(dot)
+                else:
+                    continue
+            else:
+                object_5 = [x_m - 1, y + 1, card[x_m - 1][y + 1]]
+                object_6 = [x_m - 1, y, card[x_m - 1][y]]
+
+                if min_max_angle([object_1, object_2, object_5, object_6],
+                                 point_coord,
+                                 angle_line):
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(object_6, object_1, object_2, point_coord, direction):
+                        list_places.append(dot)
+
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(object_6, object_5, object_2, point_coord, direction):
+                        list_places.append(dot)
+
+                else:
+                    continue
+
+    # если проекция прямой перпендикулярна OY
+    elif (direction[0] != 0) and (direction[1] == 0):
+
+        y_m = math.floor(point_coord[1])
+
+        if y_m < 0:
+            return []
+
+        for x in range(0, size_x - 1):
+
+            item_1 = [x, y_m, card[x][y_m]]
+            item_4 = [x + 1, y_m, card[x + 1][y_m]]
+
+            if y_m < size_y - 1:
+                item_2 = [x, y_m + 1, card[x][y_m + 1]]
+                item_3 = [x + 1, y_m + 1, card[x + 1][y_m + 1]]
+
+                if min_max_angle([item_1, item_2, item_3, item_4],
+                                 point_coord,
+                                 angle_line):
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(item_1, item_4, item_3, point_coord, direction):
+                        list_places.append(dot)
+
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(item_1, item_2, item_3, point_coord, direction):
+                        list_places.append(dot)
+
+                    if (y_m > 0) and (point_coord[1] % 2 == 0):
+
+                        item_7 = [x, y_m - 1, card[x][y_m - 1]]
+                        item_8 = [x + 1, y_m - 1, card[x + 1][y_m - 1]]
+
+                        if min_max_angle([item_1, item_7, item_3, item_8],
+                                         point_coord,
+                                         angle_line):
+
+                            # если найдена точка пересечения внутри первого треугольника
+                            if dot := is_point(item_7, item_8, item_3, point_coord, direction):
+                                list_places.append(dot)
+
+                            # если найдена точка пересечения внутри второго треугольника
+                            if dot := is_point(item_7, item_1, item_3, point_coord, direction):
+                                list_places.append(dot)
+
+                else:
+                    continue
+
+            else:
+
+                item_5 = [x, y_m - 1, card[x][y_m - 1]]
+                item_6 = [x + 1, y_m - 1, card[x + 1][y_m - 1]]
+
+                if min_max_angle([item_1, item_5, item_6, item_4],
+                                 point_coord,
+                                 angle_line):
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(item_6, item_4, item_1, point_coord, direction):
+                        list_places.append(dot)
+
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(item_6, item_5, item_1, point_coord, direction):
+                        list_places.append(dot)
+
+                else:
+                    continue
+
+    # если проекция прямой вырождается в точку
+    elif (direction[0] == 0) and (direction[1] == 0):
+
+        x = math.floor(point_coord[0])
+        y = math.floor(point_coord[1])
+
+        if (x < 0) or (x >= size_x):
+            return []
+
+        if (y < 0) or (y >= size_y):
+            return []
+
+        # если точка находится внутри матрицы
+        if (x < size_x - 1) and (y < size_y - 1):
+            height_1 = [x, y, card[x][y]]
+            height_2 = [x + 1, y, card[x + 1][y]]
+            height_3 = [x + 1, y + 1, card[x + 1][y + 1]]
+            height_4 = [x, y + 1, card[x][y + 1]]
+
+            # если найдена точка пересечения внутри первого треугольника
+            if dot := is_point(height_4, height_1, height_2, point_coord, direction):
+                list_places.append(dot)
+
+            # если найдена точка пересечения внутри второго треугольника
+            if dot := is_point(height_4, height_3, height_2, point_coord, direction):
+                list_places.append(dot)
+
+        # если точка находится на нижней границе:
+        elif (x == size_x - 1) and (y < size_y - 1):
+            height_1 = [x, y, card[x][y]]
+            height_2 = [x + 1, y, card[x + 1][y]]
+            height_3 = [x + 1, y - 1, card[x + 1][y - 1]]
+            height_4 = [x, y - 1, card[x][y - 1]]
+
+            # если найдена точка пересечения внутри первого треугольника
+            if dot := is_point(height_4, height_1, height_2, point_coord, direction):
+                list_places.append(dot)
+
+            # если найдена точка пересечения внутри второго треугольника
+            if dot := is_point(height_4, height_3, height_2, point_coord, direction):
+                list_places.append(dot)
+
+        # точка находится на правой границе
+        elif (x != size_x - 1) and (y == size_y - 1):
+            height_1 = [x, y, card[x][y]]
+            height_2 = [x, y - 1, card[x][y - 1]]
+            height_3 = [x + 1, y - 1, card[x + 1][y - 1]]
+            height_4 = [x + 1, y, card[x + 1][y]]
+
+            # если найдена точка пересечения внутри первого треугольника
+            if dot := is_point(height_2, height_3, height_4, point_coord, direction):
+                list_places.append(dot)
+
+            # если найдена точка пересечения внутри второго треугольника
+            if dot := is_point(height_2, height_1, height_4, point_coord, direction):
+                list_places.append(dot)
+
+        # точка находится в правом нижнем углу
+        elif (x == size_x - 1) and (y == size_y - 1):
+            height_1 = [x, y, card[x][y]]
+            height_2 = [x - 1, y, card[x - 1][y]]
+            height_3 = [x - 1, y - 1, card[x - 1][y - 1]]
+            height_4 = [x, y - 1, card[x][y - 1]]
+
+            # если найдена точка пересечения внутри первого треугольника
+            if dot := is_point(height_3, height_4, height_1, point_coord, direction):
+                list_places.append(dot)
+
+            # если найдена точка пересечения внутри второго треугольника
+            if dot := is_point(height_3, height_2, height_1, point_coord, direction):
+                list_places.append(dot)
+
+    # сравниваем значения компонент по модулю направляющего вектора
+    elif math.fabs(direction[0]) > math.fabs(direction[1]):
+
+        for x in range(0, size_x - 1):
+
+            # вычисляем предыдущую координату по y
+            y_future = ((x + 1) - point_coord[0]) * (direction[1] / direction[0]) + point_coord[1]
+            # вычисляем текущую координату по y
+            y_current = (x - point_coord[0]) * (direction[1] / direction[0]) + point_coord[1]
+
+            # если текущая координата отрцательная, то переходим к следующему шагу
+            if (y_future < 0) or (y_future >= size_y):
+                continue
+
+            # округляем значения
+            y_2 = math.floor(y_future)
+            y_1 = math.floor(y_current)
+
+            # вычислим координаты квадратов
+            peak_1 = [x, y_1, card[x][y_1]]
+            peak_2 = [x + 1, y_1, card[x + 1][y_1]]
+
+            peak_3 = [x + 1, y_1 + 1, card[x + 1][y_1 + 1]]
+            peak_4 = [x + 1, y_1, card[x + 1][y_1]]
+
+            if min_max_angle([peak_1, peak_2, peak_3, peak_4],
+                             point_coord,
+                             angle_line):
+
+                # если найдена точка пересечения внутри первого треугольника
+                if dot := is_point(peak_1, peak_4, peak_3, point_coord, direction):
+                    list_places.append(dot)
+                # если найдена точка пересечения внутри второго треугольника
+                if dot := is_point(peak_1, peak_2, peak_3, point_coord, direction):
+                    list_places.append(dot)
+
+            # если прямая пересекает более 1 квадрата
+            if (y_2 - y_1 == 1) and (y_2 < size_y - 1):
+                peak_5 = [x, y_1 + 2, card[x][y_1 + 2]]
+                peak_6 = [x + 1, y_1 + 2, card[x + 1][y_1 + 2]]
+
+                if min_max_angle([peak_2, peak_5, peak_3, peak_6],
+                                 point_coord,
+                                 angle_line):
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(peak_2, peak_3, peak_6, point_coord, direction):
+                        list_places.append(dot)
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(peak_2, peak_5, peak_6, point_coord, direction):
+                        list_places.append(dot)
+
+            elif (y_2 - y_1 == -1) and (y_2 < size_y - 1):
+
+                peak_7 = [x + 1, y_1 - 1, card[x + 1][y_1 - 1]]
+                peak_8 = [x, y_1 - 1, card[x][y_1 - 1]]
+
+                if min_max_angle([peak_1, peak_4, peak_7, peak_8],
+                                 point_coord,
+                                 angle_line):
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(peak_8, peak_7, peak_4, point_coord, direction):
+                        list_places.append(dot)
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(peak_8, peak_1, peak_4, point_coord, direction):
+                        list_places.append(dot)
+
+    elif math.fabs(direction[0]) <= math.fabs(direction[1]):
+
+        for y in range(0, size_y - 1):
+
+            # вычисляем предыдущую координату по x
+            x_future = ((y + 1) - point_coord[1]) * (direction[0] / direction[1]) + point_coord[0]
+            # вычисляем текущую координату по x
+            x_current = (y - point_coord[1]) * (direction[0] / direction[1]) + point_coord[0]
+
+            # если текущая координата отрцательная, то переходим к следующему шагу
+            if (x_future < 0) or (x_future >= size_x - 1):
+                continue
+
+            # округляем значения
+            x_2 = math.floor(x_future)
+            x_1 = math.floor(x_current)
+
+            # вычисляем координаты точек
+            place_1 = [x_1, y, card[x_1][y]]
+            place_2 = [x_1, y + 1, card[x_1][y + 1]]
+            place_3 = [x_1 + 1, y + 1, card[x_1 + 1][y + 1]]
+            place_4 = [x_1 + 1, y, card[x_1 + 1][y]]
+
+            if min_max_angle([place_1, place_2, place_3, place_4],
+                             point_coord,
+                             angle_line):
+
+                # если найдена точка пересечения внутри первого треугольника
+                if dot := is_point(place_1, place_4, place_3, point_coord, direction):
+                    list_places.append(dot)
+                # если найдена точка пересечения внутри второго треугольника
+                if dot := is_point(place_1, place_2, place_3, point_coord, direction):
+                    list_places.append(dot)
+
+            if (x_2 - x_1 == 1) and (x_2 < size_x - 1):
+
+                place_5 = [x_1 + 2, y, card[x_1 + 2][y]]
+                place_6 = [x_1 + 2, y + 1, card[x_1 + 2][y + 1]]
+
+                if min_max_angle([place_3, place_4, place_5, place_6],
+                                 point_coord,
+                                 angle_line):
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(place_4, place_5, place_6, point_coord, direction):
+                        list_places.append(dot)
+
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(place_4, place_3, place_6, point_coord, direction):
+                        list_places.append(dot)
+
+            elif x_2 - x_1 == -1:
+
+                place_7 = [x_1 - 1, y + 1, card[x_1 - 1][y + 1]]
+                place_8 = [x_1 - 1, y, card[x_1 - 1][y]]
+
+                if min_max_angle([place_1, place_3, place_7, place_8],
+                                 point_coord,
+                                 angle_line):
+
+                    # если найдена точка пересечения внутри первого треугольника
+                    if dot := is_point(place_8, place_3, place_1, point_coord, direction):
+                        list_places.append(dot)
+
+                    # если найдена точка пересечения внутри второго треугольника
+                    if dot := is_point(place_8, place_7, place_1, point_coord, direction):
+                        list_places.append(dot)
 
     return list_places
 
@@ -563,24 +1013,32 @@ def construction(matrix, locations: list, place: list):
 
 
 def main():
-    p = [1, 0, 17]  # направляющий вектор
-    M_1 = [150, 140, 28]  # заданная точка
+    p = [0, 1, 15]  # направляющий вектор
+    M_1 = [50, 70, 30]  # заданная точка
 
-    world = maps()
+    world = maps()  # матрица высот поверхности
 
-    start_time = time.time()
-    data = search_optimum(world, M_1, p)
-    end_time = time.time()
+    time_usual = time.time()  # начало подсчёта времени
+    data = search(world, M_1, p)
+    time_usual_end = time.time()  # конец подсчёта времени
 
-    print(data)
+    print(f'Поиск по всей матрице: {data}')
+    print(f'Занимаемое время вычислений: {(time_usual_end - time_usual) * (10 ** 3)} , ms\n')
 
-    print((end_time - start_time) * (10 ** 3), "ms")
+    time_optimum = time.time()
+    data_new = search_optimum(world, M_1, p)
+    time_optimum_end = time.time()
 
-    start_time = time.time()
-    new_data = search(world, M_1, p)
-    end_time = time.time()
-    print((end_time - start_time) * (10 ** 3), "ms")
-    # construction(world, data, M_1)
+    print(f'Поиск с оптимизацией: {data_new}')
+    print(f'Занимаемое время вычислений: {(time_optimum_end - time_optimum) * (10 ** 3)} , ms\n')
+
+    time_angle = time.time()
+    data_angle = search_optimum_with_angle(world, M_1, p)
+    time_angle_end = time.time()
+
+    print(f'Поиск с оптимизацией и углом: {data_angle}')
+    print(f'Занимаемое время вычислений: {(time_angle_end - time_angle) * (10 ** 3)} , ms\n')
+    construction(world, data, M_1)
 
 
 if __name__ == "__main__":
